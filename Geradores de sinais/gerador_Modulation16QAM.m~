@@ -1,0 +1,78 @@
+%generate a ramdom binary data stream
+M=16; % size of signal constelation
+k = log2(M); %number of bits per symbol
+n = 14000; %number of bits to process
+numSamplesPerSymbol = 1; %oversampling factor
+snrr=[0];
+
+
+pho = 0; %phase offset
+amostras = 10;
+w = warning ('off','all');
+for ind = 1:length(snrr)
+    snr = snrr(ind);
+    fileID = fopen(['~/Documentos/MLC/Dados/QAM/' num2str(M) 'QAM_SNR_' num2str(snr) '_dBm_' num2str(n) '_bits_' num2str(amostras) '_amostras_offset_' num2str(pho)  '.txt'],'w');
+    
+    for count = 1:1:amostras
+        
+        disp([num2str(ind) ' de ' num2str(size(snrr))  '-Gerando sinal ' num2str(M) 'QAM ' num2str(count) ' de ' num2str(amostras)]);
+
+            %create a binary data stream as a column vector
+            rng default %use default ramdom number generator
+            dataIn = randi([0 1],n,1); %generate vector of binary data
+
+            %perform a bit-to-symbol mapping
+            dataInMatrix = reshape(dataIn,length(dataIn)/k,k); % reshape data into binary k-tubples, k=log2(M)
+            dataSymbolsIn = bi2de(dataInMatrix); % Convert to integers
+
+            %Modulate using 16-QAM
+            %apply modulation
+            dataMod = qammod(dataSymbolsIn,M,pho,'bin'); %Binary coding, phase offset = pho
+            %dataModG= qammod(dataSymbolsIn,M); %gray coding, phase offset = 0;
+
+            rxsinal = awgn(dataMod,snr, 'measured');
+            disp(rxsinal(1:1));
+            disp(dataMod(1:1));
+            for ii = 1:length(rxsinal)
+                if(ii>1794) break;
+                end
+                fprintf(fileID, '%s', rxsinal(ii));
+                if(ii<length(rxsinal))
+                    fprintf(fileID,',');
+                end    
+            end   
+            fprintf(fileID,'\n');
+    end
+end
+%receivedSignalG = awgn(dataModG,snr,'measured');
+
+% %create a constellation diagram
+% sPlotFig = scatterplot(receivedSignal,1,0,'g.');
+% hold on
+% scatterplot(dataMod,1,0,'k*',sPlotFig);
+% 
+% %view wave signal plot([1:1:7500],receivedSignal);
+% 
+% %Demodulate 16-QAM
+% 
+% dataSymbolsOut = qamdemod(receivedSignal,M,pho,'bin'); %phase offset
+% dataSymbolsOutG = qamdemod(receivedSignalG,M); %gray
+% 
+% %convert the integer-valued signal to a binary signal the de2bi function is
+% %used to convert the data symbols from the QAM demodulator, into a binary
+% %matrix
+% 
+% dataOutMatrix = de2bi(dataSymbolsOut,k);
+% dataOut = dataOutMatrix(:); % return data in column vector
+% 
+% dataOutMatrixG = de2bi(dataSymbolsOutG,k);
+% dataOutG= dataOutMatrixG(:); %return data in column vector
+% 
+% %compute de System BER biterr is used to calculate the bit error statistics
+% %from the original binary data and the received data sgtreams
+% [numErrors,ber] = biterr(dataIn, dataOut);
+% fprintf('\nThe binary coding bit error rate = %5.2e, based on %d erros\n',ber,numErrors);
+% 
+% [numErrorsG,berG] = biterr(dataIn, dataOutG);
+% fprintf('\nThe gray coding bit error rate = %5.2e, based on %d erros\n',berG,numErrorsG);
+

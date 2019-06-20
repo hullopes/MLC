@@ -1,0 +1,6 @@
+function loadedX = loadFiles(M)
+    for i=1:length(M)
+        file=['~/Documentos/MLC/Dados/QAM2/' num2str(m) 'QAM_SNR_' num2str(snr) '_dBm_' num2str(n) '_bits_' num2str(amostras)  '.txt'];
+        
+end
+
